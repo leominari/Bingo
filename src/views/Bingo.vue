@@ -121,7 +121,9 @@ export default {
         return 0
       }
 
-      let candidateNumber = Math.floor(Math.random() * this.numeroMaximo) + 1
+      const randomBuffer = new Uint32Array(1)
+      window.crypto.getRandomValues(randomBuffer)
+      let candidateNumber = (randomBuffer[0] % this.numeroMaximo) + 1
 
       if (this.numerosSorteados.length < this.numeroMaximo && this.numerosSorteados.includes(candidateNumber)) {
         return this.getRandomNumber()
