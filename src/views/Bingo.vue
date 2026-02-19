@@ -104,9 +104,6 @@ export default {
       this.rouletteTrigger = false
       this.numerosSorteados = []
       this.numeroSorteado = 0
-      console.log('reiniciar', this.rouletteTrigger,
-          this.numerosSorteados,
-          this.numeroSorteado)
     },
     rouletteNumber() {
       setTimeout(() => {
