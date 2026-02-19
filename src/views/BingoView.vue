@@ -61,7 +61,7 @@
 <script>
 
 export default {
-  name: "Bingo",
+  name: "BingoView",
   components: {},
   data() {
     return {

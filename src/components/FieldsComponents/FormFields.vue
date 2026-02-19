@@ -1,11 +1,11 @@
 <template>
   <v-form
-      v-if="formRef && fields"
+      v-if="formRef && localFields"
       class="form-fields fields"
       :ref="formRef"
   >
     <component
-        v-for="field in fields"
+        v-for="field in localFields"
         :maskMoney="field.maskMoney"
         :title="field.title"
         :maskFormat="field.maskFormat"
@@ -37,7 +37,7 @@
 
 <script>
 import TextField from "../inputs/TextField";
-import Vue from 'vue';
+import { cloneDeep } from "lodash";
 
 export default {
   name: "FormFields",
@@ -52,7 +52,7 @@ export default {
     fields: {
       required: true,
       type: Object,
-      default: {},
+      default: () => ({}),
     },
     codRef: {
       type: String,
@@ -73,6 +73,7 @@ export default {
       windowWidth: window.innerWidth,
       inputsValues: {},
       formRef: false,
+      localFields: {},
     }
   },
   methods: {
@@ -82,9 +83,11 @@ export default {
     updateValueField(event, field) {
       if (field && field.variableName) {
         this.inputsValues[field.variableName] = event;
-        this.fields[field.variableName].valueField = event;
+        // this.fields[field.variableName].valueField = event; // Mutating prop
+        this.localFields[field.variableName].valueField = event; // Mutating local state
+
         if (field.changeValue) {
-          field.changeValue(this.fields);
+          field.changeValue(this.localFields);
         }
         this.verifyRules(field);
         this.$emit('update:values', this.inputsValues);
@@ -93,12 +96,12 @@ export default {
       }
     },
     verifyRules(field) {
-      if (this.fields[field.variableName]) {
-        const rules = this.fields[field.variableName].rules;
+      if (this.localFields[field.variableName]) {
+        const rules = this.localFields[field.variableName].rules;
         if (rules && Array.isArray(rules) && rules.length > 0) {
-          this.fields[field.variableName].dinamicRules = [];
+          this.localFields[field.variableName].dinamicRules = [];
           rules.forEach((rule) => {
-            this.fields[field.variableName].dinamicRules.push(rule(this.fields))
+            this.localFields[field.variableName].dinamicRules.push(rule(this.localFields))
           })
         }
       }
@@ -106,14 +109,20 @@ export default {
     },
     async validateForms() {
       if (!this.loading) {
-        await Object.entries(this.fields).forEach(field => {
+        await Object.entries(this.localFields).forEach(field => {
           this.verifyRules(field[1]);
         })
-        const isValid = this.$refs[this.formRef].validate();
-        this.$emit('checkValidity', {isValid: isValid, values: this.inputsValues});
-        if (!isValid) {
+        const isValid = await this.$refs[this.formRef].validate();
+
+        let validResult = isValid;
+        if (typeof isValid === 'object' && isValid !== null && 'valid' in isValid) {
+             validResult = isValid.valid;
+        }
+
+        this.$emit('checkValidity', {isValid: validResult, values: this.inputsValues});
+        if (!validResult) {
           this.$nextTick(() => {
-            let domRect = document.querySelector('.v-input.error--text')?.getBoundingClientRect();
+            let domRect = document.querySelector('.v-input--error')?.getBoundingClientRect();
             if (domRect) {
               window.scrollTo(
                   domRect.left + document.documentElement.scrollLeft,
@@ -126,15 +135,20 @@ export default {
       }
     },
     initializeFields() {
-      Object.entries(this.fields).forEach(field => {
-        Vue.set(this.fields[field[0]], 'variableName', field[0]);
-        Vue.set(this.inputsValues, field[1].variableName, '');
+      this.localFields = cloneDeep(this.fields);
+      Object.entries(this.localFields).forEach(field => {
+        this.localFields[field[0]].variableName = field[0];
+        this.inputsValues[field[1].variableName] = '';
       })
     }
   },
   watch: {
-    fields() {
-      this.initializeFields();
+    fields: {
+      handler() {
+        this.initializeFields();
+      },
+      deep: true,
+      immediate: true
     },
     validate() {
       this.validateForms();
@@ -146,15 +160,16 @@ export default {
     })
     this.formRef = (this.codRef ? this.codRef : 'form');
 
-    this.initializeFields();
+    // removed explicit call as watch immediate handles it
+    // this.initializeFields();
   },
   computed: {
     isMobile() {
       return this.windowWidth <= 768;
     },
     withLabel() {
-      if (Object.values(this.fields)[0]) {
-        return Object.values(this.fields)[0].hasOwnProperty('label');
+      if (Object.values(this.localFields)[0]) {
+        return Object.prototype.hasOwnProperty.call(Object.values(this.localFields)[0], 'label');
       }
       return false;
 

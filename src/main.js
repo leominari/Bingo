@@ -1,20 +1,16 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
 import vuetify from './plugins/vuetify'
 import router from './router'
 import store from './store'
-import LottieAnimation from 'lottie-web-vue'
 
-
-import 'vuetify/dist/vuetify.min.css'
+// import 'vuetify/styles' // Can be imported here or in plugins/vuetify.js
 // import './assets/scss/app.scss'
 
-Vue.config.productionTip = false
+const app = createApp(App)
 
-new Vue({
-  vuetify,
-  router,
-  store,
-  LottieAnimation,
-  render: h => h(App)
-}).$mount('#app')
+app.use(router)
+app.use(store)
+app.use(vuetify)
+
+app.mount('#app')

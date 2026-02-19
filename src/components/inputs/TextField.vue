@@ -14,17 +14,17 @@
           v-model="text"
           :type="type"
           :placeholder="placeholder"
-          @input="$emit('update:value', text)"
+          @update:modelValue="$emit('update:value', $event)"
           @keyup.enter="$emit('onEnter', text)"
           @keydown="maskMoney && $event.key === '-' ? $event.preventDefault() : null"
-          outlined>
+          variant="outlined">
       </v-text-field>
     </div>
   </v-col>
 </template>
 
 <script>
-import {VMoney} from 'v-money';
+import { Money3Directive } from 'v-money3';
 
 export default {
   name: "TextField",
@@ -65,7 +65,7 @@ export default {
       }
     }
   },
-  directives: {money: VMoney},
+  directives: {money: Money3Directive},
   watch: {
     clearValue() {
       this.text = '';
